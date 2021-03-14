@@ -50,9 +50,9 @@ def millerRabin(candidate):
 			return False
 	return True
 
-def generateKeyPair():
-	p = generatePrime(1024)
-	q = generatePrime(1024)
+def generateKeyPair(n):
+	p = generatePrime(n)
+	q = generatePrime(n)
 	n = p * q
 	n_t = (p - 1) * (q - 1)
 	e = 65537
@@ -62,33 +62,46 @@ def generateKeyPair():
 def encryptMessage(message, n, e):
 	return [(ord(char) ** e) % n for char in message]
 
-def decryptMessage(message, n, d):
-	return "".join(chr((char_e ** d) % n) for char_e in message)
+def decryptMessage(message, p, q, d):
+	d_P = d % (p - 1)
+	d_Q = d % (q - 1)
+	q_inv = (q ** -1) % p
+	return "".join(chr(decryptCRT(char_e, p, q, d_P, d_Q, q_inv)) for char_e in message)
 
-def writeKeyPairs(p, q, n, d, e):
+def decryptCRT(c, p, q, d_P, d_Q, q_inv):
+	m1 = (c ** d_P) % p
+	m2 = (c ** d_Q) % q
+
+	h = (q_inv * (m1 - m2)) % p
+
+	m = (m2 + h * q) % (p*q)
+	return int(m)
+
+def writePublicKey(n, e, file_path):
 	key_file = asn1tools.compile_files('RSA.asn')
 	
 	asn1_encoded = key_file.encode('PUBLICKEY', {'n': n, 'e': e})
-	
-	pk = open('public', 'wb')
+	pk = open(file_path, 'wb')
 	pk.write(b'-----BEGIN RSA PUBLIC KEY-----\n')
 	pk.write(base64.b64encode(asn1_encoded))
 	pk.write(b'\n-----END RSA PUBLIC KEY-----')
 	pk.close()
+
+def writePrivateKey(p, q, d, file_path):
+	key_file = asn1tools.compile_files('RSA.asn')
 	
 	asn1_encoded = key_file.encode('PRIVATEKEY', {'p': p, 'q': q, 'd': d})
-
-	pk = open('private', 'wb')
+	pk = open(file_path, 'wb')
 	pk.write(b'-----BEGIN RSA PRIVATE KEY-----\n')
 	pk.write(base64.b64encode(asn1_encoded))
 	pk.write(b'\n-----END RSA PRIVATE KEY-----')
 	pk.close()
 
-def loadPublicKey():
+def loadPublicKey(file_path):
 	endcoded_key = ""
 	start = False
 	end = False
-	for line in open('public', 'r'):
+	for line in open(file_path, 'r'):
 		if not start and line == '-----BEGIN RSA PUBLIC KEY-----\n':
 				start = True
 		elif not end and line == '-----END RSA PUBLIC KEY-----':
@@ -104,11 +117,11 @@ def loadPublicKey():
 
 	return key['n'], key['e']
 
-def loadPrivateKey():
+def loadPrivateKey(file_path):
 	endcoded_key = ""
 	start = False
 	end = False
-	for line in open('private', 'r'):
+	for line in open(file_path, 'r'):
 		if not start and line == '-----BEGIN RSA PRIVATE KEY-----\n':
 				start = True
 		elif not end and line == '-----END RSA PRIVATE KEY-----':
@@ -123,16 +136,4 @@ def loadPrivateKey():
 	key = key_file.decode('PRIVATEKEY', decoded_key)
 
 	return key['p'], key['q'], key['d']
-
-if __name__ == "__main__":
-	(n,e), (p,q,d) = generateKeyPair()
-
-	#message = "H"
-	#c = encryptMessage(message, n, e)
-	#m = decryptMessage(c, n, d)
-
-	#writeKeyPairs(p,q,n,d,e)
-
-	(n,e) = loadPublicKey()
-	(p,q,d) = loadPrivateKey()
 
