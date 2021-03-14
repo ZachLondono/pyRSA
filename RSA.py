@@ -65,16 +65,15 @@ def encryptMessage(message, n, e):
 def decryptMessage(message, p, q, d):
 	d_P = d % (p - 1)
 	d_Q = d % (q - 1)
-	q_inv = (q ** -1) % p
+	q_inv = pow(q, -1, p)
 	return "".join(chr(decryptCRT(char_e, p, q, d_P, d_Q, q_inv)) for char_e in message)
+	return a
 
 def decryptCRT(c, p, q, d_P, d_Q, q_inv):
-	m1 = (c ** d_P) % p
-	m2 = (c ** d_Q) % q
-
-	h = (q_inv * (m1 - m2)) % p
-
-	m = (m2 + h * q) % (p*q)
+	m1 = pow(c, d_P, p)
+	m2 = pow(c, d_Q, q)
+	h = ((m1 - m2) * q_inv ) % p
+	m = m2 + h * q
 	return int(m)
 
 def writePublicKey(n, e, file_path):
