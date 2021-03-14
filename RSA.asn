@@ -1,0 +1,13 @@
+RSAKEY DEFINITIONS ::= BEGIN
+
+    PUBLICKEY ::= SEQUENCE {
+        n        INTEGER,
+        e        INTEGER
+    }
+    
+	PRIVATEKEY ::= SEQUENCE {
+        n        INTEGER,
+        d        INTEGER
+    }
+
+END

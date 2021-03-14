@@ -1,4 +1,6 @@
 import random
+import asn1tools
+import base64
 
 primes_list = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 
 				31, 37, 41, 43, 47, 53, 59, 61, 67,  
@@ -50,8 +52,8 @@ def millerRabin(candidate):
 	return True
 
 def generateKeyPair():
-	p = generatePrime(16)
-	q = generatePrime(16)
+	p = generatePrime(256)
+	q = generatePrime(256)
 	n = p * q
 	n_t = (p - 1) * (q - 1)
 	e = 65537
@@ -62,16 +64,36 @@ def encryptMessage(message, n, e):
 	return [(ord(char) ** e) % n for char in message]
 
 def decryptMessage(message, n, d):
-	for char_e in message:
-		print(char_e)
-		c = char_e ** d
-		print(c)
-	#return "".join(chr((char_e ** d) % n) for char_e in message)
+	return "".join(chr((char_e ** d) % n) for char_e in message)
+
+def writeKeyPairs(n, d, e):
+	key_file = asn1tools.compile_files('RSA.asn')
+	
+	asn1_encoded = key_file.encode('PUBLICKEY', {'n': n, 'e': e})
+	
+	pk = open('public', 'wb')
+	pk.write(b'-----BEGIN RSA PUBLIC KEY-----\n')
+	pk.write(base64.b64encode(asn1_encoded))
+	pk.write(b'\n-----END RSA PUBLIC KEY-----')
+	pk.close()
+	
+	asn1_encoded = key_file.encode('PRIVATEKEY', {'n': n, 'd': d})
+
+	pk = open('private', 'wb')
+	pk.write(b'-----BEGIN RSA PRIVATE KEY-----\n')
+	pk.write(base64.b64encode(asn1_encoded))
+	pk.write(b'\n-----END RSA PRIVATE KEY-----')
+	pk.close()
+	
 
 
 if __name__ == "__main__":
 	(n,e), (p,q,d) = generateKeyPair()
 
+	"""
 	message = "H"
 	c = encryptMessage(message, n, e)
 	m = decryptMessage(c, n, d)
+	"""
+
+	writeKeyPairs(n,d,e)
