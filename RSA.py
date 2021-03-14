@@ -52,8 +52,8 @@ def millerRabin(candidate):
 	return True
 
 def generateKeyPair():
-	p = generatePrime(256)
-	q = generatePrime(256)
+	p = generatePrime(1024)
+	q = generatePrime(1024)
 	n = p * q
 	n_t = (p - 1) * (q - 1)
 	e = 65537
@@ -84,16 +84,57 @@ def writeKeyPairs(n, d, e):
 	pk.write(base64.b64encode(asn1_encoded))
 	pk.write(b'\n-----END RSA PRIVATE KEY-----')
 	pk.close()
-	
 
+def loadPublicKey():
+	endcoded_key = ""
+	start = False
+	end = False
+	for line in open('public', 'r'):
+		if not start and line == '-----BEGIN RSA PUBLIC KEY-----\n':
+				start = True
+		elif not end and line == '-----END RSA PUBLIC KEY-----':
+			end = True
+		elif start and not end:
+			encoded_key = line
+		else: return -1
+	
+	decoded_key = base64.b64decode(encoded_key)
+	
+	key_file = asn1tools.compile_files('RSA.asn')
+	key = key_file.decode('PUBLICKEY', decoded_key)
+
+	return key['n'], key['e']
+
+def loadPrivateKey():
+	endcoded_key = ""
+	start = False
+	end = False
+	for line in open('private', 'r'):
+		if not start and line == '-----BEGIN RSA PRIVATE KEY-----\n':
+				start = True
+		elif not end and line == '-----END RSA PRIVATE KEY-----':
+			end = True
+		elif start and not end:
+			encoded_key = line
+		else: return -1
+	
+	decoded_key = base64.b64decode(encoded_key)
+	
+	key_file = asn1tools.compile_files('RSA.asn')
+	key = key_file.decode('PRIVATEKEY', decoded_key)
+
+	return key['n'], key['d']
 
 if __name__ == "__main__":
-	(n,e), (p,q,d) = generateKeyPair()
+	#(n,e), (p,q,d) = generateKeyPair()
 
-	"""
-	message = "H"
-	c = encryptMessage(message, n, e)
-	m = decryptMessage(c, n, d)
-	"""
+	#message = "H"
+	#c = encryptMessage(message, n, e)
+	#m = decryptMessage(c, n, d)
 
-	writeKeyPairs(n,d,e)
+	#writeKeyPairs(n,d,e)
+
+	(n,e) = loadPublicKey()
+	(n,d) = loadPrivateKey()
+	
+
