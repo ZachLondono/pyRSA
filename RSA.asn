@@ -6,7 +6,8 @@ RSAKEY DEFINITIONS ::= BEGIN
     }
     
 	PRIVATEKEY ::= SEQUENCE {
-        n        INTEGER,
+        p        INTEGER,
+        q        INTEGER,
         d        INTEGER
     }
 

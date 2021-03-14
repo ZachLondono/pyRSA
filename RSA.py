@@ -13,13 +13,12 @@ primes_list = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29,
 				307, 311, 313, 317, 331, 337, 347, 349] 
 
 def generatePrime(n):
-	# pick a number in the range (2^(n-1)+1, 2^n-1)
-	candidate = (random.randrange(2**(n-1)+1, 2**n-1))
-	
-	# test for prime
-	if lowlevelprime(candidate) and millerRabin(candidate):
-		return candidate
-	else: return generatePrime(n)
+	while True:
+		# pick a number in the range (2^(n-1)+1, 2^n-1)
+		candidate = (random.randrange(2**(n-1)+1, 2**n-1))
+		# test for prime
+		if lowlevelprime(candidate) and millerRabin(candidate):
+			return candidate
 
 def lowlevelprime(candidate):
 	for divisor in primes_list:
@@ -66,7 +65,7 @@ def encryptMessage(message, n, e):
 def decryptMessage(message, n, d):
 	return "".join(chr((char_e ** d) % n) for char_e in message)
 
-def writeKeyPairs(n, d, e):
+def writeKeyPairs(p, q, n, d, e):
 	key_file = asn1tools.compile_files('RSA.asn')
 	
 	asn1_encoded = key_file.encode('PUBLICKEY', {'n': n, 'e': e})
@@ -77,7 +76,7 @@ def writeKeyPairs(n, d, e):
 	pk.write(b'\n-----END RSA PUBLIC KEY-----')
 	pk.close()
 	
-	asn1_encoded = key_file.encode('PRIVATEKEY', {'n': n, 'd': d})
+	asn1_encoded = key_file.encode('PRIVATEKEY', {'p': p, 'q': q, 'd': d})
 
 	pk = open('private', 'wb')
 	pk.write(b'-----BEGIN RSA PRIVATE KEY-----\n')
@@ -123,18 +122,17 @@ def loadPrivateKey():
 	key_file = asn1tools.compile_files('RSA.asn')
 	key = key_file.decode('PRIVATEKEY', decoded_key)
 
-	return key['n'], key['d']
+	return key['p'], key['q'], key['d']
 
 if __name__ == "__main__":
-	#(n,e), (p,q,d) = generateKeyPair()
+	(n,e), (p,q,d) = generateKeyPair()
 
 	#message = "H"
 	#c = encryptMessage(message, n, e)
 	#m = decryptMessage(c, n, d)
 
-	#writeKeyPairs(n,d,e)
+	#writeKeyPairs(p,q,n,d,e)
 
 	(n,e) = loadPublicKey()
-	(n,d) = loadPrivateKey()
-	
+	(p,q,d) = loadPrivateKey()
 
