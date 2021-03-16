@@ -85,48 +85,38 @@ class KeyPair:
 			if trialComposite(round_tester):
 				return False
 		return True
+
+def writeKeyToFile(file_path, asn1_encoded, key_type):
+
+	key_type = key_type.upper().encode('utf-8')
+	key_data = b'-----BEGIN RSA ' + key_type + b' KEY-----\n' 
+	
+	b64encoded = base64.b64encode(asn1_encoded)
+	length = len(b64encoded)
+	line_count = math.ceil(length / 64)
+	for i in range(line_count):
+		s = i * 64
+		e = s + 64
+		key_data += b64encoded[s:e]
+		if i < line_count - 1:
+			key_data += b'\n'
+
+	key_data += b'\n-----END RSA ' + key_type + b' KEY-----' 
+
+	key_file = open(file_path, 'wb')
+	key_file.write(key_data)
+	key_file.close()
 	
 def storePublicKey(file_path, publicKey):
 	key_file = asn1tools.compile_files('RSA.asn')
-	
 	asn1_encoded = key_file.encode('PUBLICKEY', {'n': publicKey.n, 'e': publicKey.e})
-	pk = open(file_path, 'wb')
-	pk.write(b'-----BEGIN RSA PUBLIC KEY-----\n')
-	
-	b64encoded = base64.b64encode(asn1_encoded)
-	length = len(b64encoded)
-	line_count = math.ceil(length / 64)
-	for i in range(line_count):
-		s = i * 64
-		e = s + 64
-		pk.write(b64encoded[s:e])
-		if i < line_count - 1:
-			pk.write(b'\n')
-
-	pk.write(b'\n-----END RSA PUBLIC KEY-----')
-	pk.close()
+	writeKeyToFile('pub.key', asn1_encoded, 'PUBLIC')
 
 def storePrivateKey(file_path, privateKey):
 	key_file = asn1tools.compile_files('RSA.asn')
-	
 	asn1_encoded = key_file.encode('PRIVATEKEY', {'p': privateKey.p, 'q': privateKey.q, 'd': privateKey.d})
-	pk = open(file_path, 'wb')
-	pk.write(b'-----BEGIN RSA PRIVATE KEY-----\n')
-
-	b64encoded = base64.b64encode(asn1_encoded)
-	length = len(b64encoded)
-	line_count = math.ceil(length / 64)
-	for i in range(line_count):
-		s = i * 64
-		e = s + 64
-		pk.write(b64encoded[s:e])
-		if i < line_count - 1:
-			pk.write(b'\n')
-
-
-	pk.write(b'\n-----END RSA PRIVATE KEY-----')
-	pk.close()
-
+	writeKeyToFile('priv.key', asn1_encoded, 'PRIVATE')
+	
 def loadPublicKey(file_path):
 	encoded_key = ""
 	start = False
