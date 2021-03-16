@@ -1,6 +1,7 @@
 import random
 import asn1tools
 import base64
+import math
 
 class PublicKey:
 	def __init__(self, n, e):
@@ -91,7 +92,17 @@ def storePublicKey(file_path, publicKey):
 	asn1_encoded = key_file.encode('PUBLICKEY', {'n': publicKey.n, 'e': publicKey.e})
 	pk = open(file_path, 'wb')
 	pk.write(b'-----BEGIN RSA PUBLIC KEY-----\n')
-	pk.write(base64.b64encode(asn1_encoded))
+	
+	b64encoded = base64.b64encode(asn1_encoded)
+	length = len(b64encoded)
+	line_count = math.ceil(length / 64)
+	for i in range(line_count):
+		s = i * 64
+		e = s + 64
+		pk.write(b64encoded[s:e])
+		if i < line_count - 1:
+			pk.write(b'\n')
+
 	pk.write(b'\n-----END RSA PUBLIC KEY-----')
 	pk.close()
 
@@ -101,12 +112,23 @@ def storePrivateKey(file_path, privateKey):
 	asn1_encoded = key_file.encode('PRIVATEKEY', {'p': privateKey.p, 'q': privateKey.q, 'd': privateKey.d})
 	pk = open(file_path, 'wb')
 	pk.write(b'-----BEGIN RSA PRIVATE KEY-----\n')
-	pk.write(base64.b64encode(asn1_encoded))
+
+	b64encoded = base64.b64encode(asn1_encoded)
+	length = len(b64encoded)
+	line_count = math.ceil(length / 64)
+	for i in range(line_count):
+		s = i * 64
+		e = s + 64
+		pk.write(b64encoded[s:e])
+		if i < line_count - 1:
+			pk.write(b'\n')
+
+
 	pk.write(b'\n-----END RSA PRIVATE KEY-----')
 	pk.close()
 
 def loadPublicKey(file_path):
-	endcoded_key = ""
+	encoded_key = ""
 	start = False
 	end = False
 	for line in open(file_path, 'r'):
@@ -115,7 +137,7 @@ def loadPublicKey(file_path):
 		elif not end and line == '-----END RSA PUBLIC KEY-----':
 			end = True
 		elif start and not end:
-			encoded_key = line
+			encoded_key += line
 		else: return -1
 	
 	decoded_key = base64.b64decode(encoded_key)
@@ -126,7 +148,7 @@ def loadPublicKey(file_path):
 	return PublicKey(key['n'], key['e'])
 
 def loadPrivateKey(file_path):
-	endcoded_key = ""
+	encoded_key = ""
 	start = False
 	end = False
 	for line in open(file_path, 'r'):
@@ -135,7 +157,7 @@ def loadPrivateKey(file_path):
 		elif not end and line == '-----END RSA PRIVATE KEY-----':
 			end = True
 		elif start and not end:
-			encoded_key = line
+			encoded_key += line
 		else: return -1
 	
 	decoded_key = base64.b64decode(encoded_key)
