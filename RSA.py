@@ -3,7 +3,7 @@ import asn1tools
 import base64
 
 class PublicKey:
-	def __init__(self, e, n):
+	def __init__(self, n, e):
 		self.e = e
 		self.n = n
 
@@ -43,7 +43,7 @@ class KeyPair:
 		# private key exponent
 		d = pow(e, -1, n_t)
 		
-		self.publicKey = PublicKey(e, n)
+		self.publicKey = PublicKey(n, e)
 		self.privateKey = PrivateKey(p, q, d)
 
 	# Continue to try generating random numbers until it can be fairly sure that the number is prime
@@ -85,68 +85,65 @@ class KeyPair:
 				return False
 		return True
 	
-	def writePublicKey(file_path):
-		key_file = asn1tools.compile_files('RSA.asn')
-		
-		asn1_encoded = key_file.encode('PUBLICKEY', {'n': self.n, 'e': self.e})
-		pk = open(file_path, 'wb')
-		pk.write(b'-----BEGIN RSA PUBLIC KEY-----\n')
-		pk.write(base64.b64encode(asn1_encoded))
-		pk.write(b'\n-----END RSA PUBLIC KEY-----')
-		pk.close()
+def storePublicKey(file_path, publicKey):
+	key_file = asn1tools.compile_files('RSA.asn')
 	
-	def writePrivateKey(file_path):
-		key_file = asn1tools.compile_files('RSA.asn')
-		
-		asn1_encoded = key_file.encode('PRIVATEKEY', {'p': self.p, 'q': self.q, 'd': self.d})
-		pk = open(file_path, 'wb')
-		pk.write(b'-----BEGIN RSA PRIVATE KEY-----\n')
-		pk.write(base64.b64encode(asn1_encoded))
-		pk.write(b'\n-----END RSA PRIVATE KEY-----')
-		pk.close()
+	asn1_encoded = key_file.encode('PUBLICKEY', {'n': publicKey.n, 'e': publicKey.e})
+	pk = open(file_path, 'wb')
+	pk.write(b'-----BEGIN RSA PUBLIC KEY-----\n')
+	pk.write(base64.b64encode(asn1_encoded))
+	pk.write(b'\n-----END RSA PUBLIC KEY-----')
+	pk.close()
+
+def storePrivateKey(file_path, privateKey):
+	key_file = asn1tools.compile_files('RSA.asn')
 	
-	def loadPublicKey(file_path):
-		endcoded_key = ""
-		start = False
-		end = False
-		for line in open(file_path, 'r'):
-			if not start and line == '-----BEGIN RSA PUBLIC KEY-----\n':
-					start = True
-			elif not end and line == '-----END RSA PUBLIC KEY-----':
-				end = True
-			elif start and not end:
-				encoded_key = line
-			else: return -1
-		
-		decoded_key = base64.b64decode(encoded_key)
-		
-		key_file = asn1tools.compile_files('RSA.asn')
-		key = key_file.decode('PUBLICKEY', decoded_key)
+	asn1_encoded = key_file.encode('PRIVATEKEY', {'p': privateKey.p, 'q': privateKey.q, 'd': privateKey.d})
+	pk = open(file_path, 'wb')
+	pk.write(b'-----BEGIN RSA PRIVATE KEY-----\n')
+	pk.write(base64.b64encode(asn1_encoded))
+	pk.write(b'\n-----END RSA PRIVATE KEY-----')
+	pk.close()
+
+def loadPublicKey(file_path):
+	endcoded_key = ""
+	start = False
+	end = False
+	for line in open(file_path, 'r'):
+		if not start and line == '-----BEGIN RSA PUBLIC KEY-----\n':
+				start = True
+		elif not end and line == '-----END RSA PUBLIC KEY-----':
+			end = True
+		elif start and not end:
+			encoded_key = line
+		else: return -1
 	
-		self.n = key['n']
-		self.e = key['e']
+	decoded_key = base64.b64decode(encoded_key)
 	
-	def loadPrivateKey(file_path):
-		endcoded_key = ""
-		start = False
-		end = False
-		for line in open(file_path, 'r'):
-			if not start and line == '-----BEGIN RSA PRIVATE KEY-----\n':
-					start = True
-			elif not end and line == '-----END RSA PRIVATE KEY-----':
-				end = True
-			elif start and not end:
-				encoded_key = line
-			else: return -1
-		
-		decoded_key = base64.b64decode(encoded_key)
-		
-		key_file = asn1tools.compile_files('RSA.asn')
-		key = key_file.decode('PRIVATEKEY', decoded_key)
+	key_file = asn1tools.compile_files('RSA.asn')
+	key = key_file.decode('PUBLICKEY', decoded_key)
+
+	return PublicKey(key['n'], key['e'])
+
+def loadPrivateKey(file_path):
+	endcoded_key = ""
+	start = False
+	end = False
+	for line in open(file_path, 'r'):
+		if not start and line == '-----BEGIN RSA PRIVATE KEY-----\n':
+				start = True
+		elif not end and line == '-----END RSA PRIVATE KEY-----':
+			end = True
+		elif start and not end:
+			encoded_key = line
+		else: return -1
 	
-		self.p = key['p']
-		self.q = key['q']
-		self.d = key['d']
+	decoded_key = base64.b64decode(encoded_key)
+	
+	key_file = asn1tools.compile_files('RSA.asn')
+	key = key_file.decode('PRIVATEKEY', decoded_key)
+
+	return PrivateKey(key['p'], key['q'], key['d'])
 
 
 def encryptMessage(pubKey, message):
